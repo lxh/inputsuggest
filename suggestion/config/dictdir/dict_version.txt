@@ -1,0 +1,4 @@
+dictphrase 3.20090223
+dictsubphrase 3.20090223
+dictnumber 3.20090223
+dictunit 3.20090223

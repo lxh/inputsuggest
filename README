@@ -1,0 +1,31 @@
+huazi
+qq群: 239103236
+xuan(daughter)
+
+配置文件的参数有很多，现在使用最简单的形式，其他的参数都使用默认参数，这三个参数(configurepath,pathdata,tasklist)是必须要设置的参数
+configurepath:需要的配置文件的路径
+pathdata:要处理的数据的路径
+tasklist:要处理的数据的所在的文件夹
+
+现在文档还在写，待文档写完之后就会有较好的认识了
+运行的步骤：
+1. cd code
+2. make
+3. cd ../bin
+4. sh Run.sh
+5. 把生成的is.cgi拷贝到apache的相关目录下面(或者不拷贝直接使用cgi测试)
+6. 启动程序 ./isserver -c config.ini
+7.  使用url测试: http://xxx.xxx.xxx.xxx/cgi-bin/is.cgi?sip=xxx.xxx.xxx.xxx&op=is&x=xuan&p=11111&incode=utf-8&w=kendeji
+                        ---------------                    ---------------
+                        apache的ip                         server的ip 
+    或者直接使用cgi进行测试
+    ./is.cgi "sip=xxx.xxx.xxx.xxx&op=is&x=xuan&p=11111&incode=utf-8&w=kendeji"
+
+
+还没有实现:
+1. 多音字选取正确的读音
+2. op=dc是使用的前面版本的，没有整理，里面有些参数失效
+3. 现在的编码转换在cgi里面实现的，因为最早的时候没有编码转换这项，后来要添加，就临时放到cgi里面了，但是这样放毕竟不是很好，待处理
+
+安装注意:
+1. 在make的时候，由于cgi的生成需要编码转换的(iconv)的东西，因此如果编译不通过，请单独调试cgi
