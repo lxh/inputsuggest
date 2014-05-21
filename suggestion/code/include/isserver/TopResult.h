@@ -105,7 +105,7 @@ public:
 	{
 		if ((int)tipqueue.size() < m_maxsize || queryNum > minScore)
 		{
-			if(isInQueue(elemId)) {
+			if(isInQueue(elemId+(int)(long)pTree)) {
 				return 0;
 			}
 			ResultElement *elem = new ResultElement(elemId,queryNum,elemLen, pTree);
@@ -176,6 +176,7 @@ public:
 
 	TopTipQueue tipqueue;
 	FlagSet *pFlagSet;
+	bool   bSimpleView;
 private:
 	int m_maxsize;
 	int totalHit;

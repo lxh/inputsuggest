@@ -265,6 +265,12 @@ void CXHPara::Init_ParaAnly()
 		}
 	}
 	m_stParaOrig.strPre       = ToString("p");
+	string strView = ToString("view");
+	if(strView == "simple") {
+		bSimpleView = true;
+	} else {
+		bSimpleView = false;
+	}
 	m_strTaskName       = ToString("x");
 	string strKey       = ToString("w");
 	//取出空格,噪音，----------------->>>>>>有待优化

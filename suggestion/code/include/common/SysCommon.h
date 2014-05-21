@@ -29,7 +29,8 @@
 //混合搜索最多查询多少次
 #define MAX_MIX_SEARCH_TIME 50
 
-#define NUMBER_MAX_RETURN_LIMIT  100 //返回结果的个数上限
+//并且还限制了对于扩展时(找上级节点)的上级个数[因为上级个数太多,会影响到速度]
+#define NUMBER_MAX_RETURN_LIMIT  1000 //返回结果的个数上限
 #define NUMBER_RETURN_DEFAULT    10  //默认返回多少条结果
 
 #define MAX_PRI_QUEUE_NUMBER  100000 //优先级队列的最大容量

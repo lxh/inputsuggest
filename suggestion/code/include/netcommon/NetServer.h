@@ -268,6 +268,7 @@ struct SocketReadTask
 struct SocketWriteTask
 {
     int fd;
+	bool bHtml;
     char *data;
     size_t len;
 };
@@ -275,6 +276,7 @@ struct SocketWriteTask
 struct QuerySearchTask
 {
     int fd;	
+	bool bHtml; //1 来源于html
     char* data;
     size_t len;
 };
@@ -689,9 +691,8 @@ public:
             int ret = safe_read(task.fd, mlse, 8);
             if (ret <4 ||*(int *)mlse!=0xFFFFEEEE)
             {
-                cout << "Read  fault package,the header is fault!!!" <<endl;
-                close(task.fd);
-                continue;
+				ReadFromHtml(querylq, task.fd, mlse);
+				continue;
             }
             int len;
             len = *(int *)(mlse+4);
@@ -714,6 +715,7 @@ public:
                 continue;
             }
             QuerySearchTask queryTask;
+			queryTask.bHtml = false;
             queryTask.fd = task.fd;
             queryTask.data = str;
             queryTask.len = len;
@@ -721,7 +723,124 @@ public:
             //  handler.handleMessage(task.server, task.fd, str, len);
             //      process request
         }
-    }
+    };
+public:
+	int ReadFromHtml(LockedQueue<QuerySearchTask> &querylq, int &iFd, char mlse[9], int iFlag=0) {
+		if(mlse[0] != 'G' || mlse[1] != 'E' || mlse[2] != 'T') {
+			printf("----->>>%c%c%c\n", mlse[0],mlse[1],mlse[2]);
+			cout << "Read  fault package,the header is fault!!!" <<endl;
+			close(iFd);
+			return -1;
+		}
+		string strQuery = "";
+		strQuery += mlse[6];
+		strQuery += mlse[7];
+		if(iFlag == 0) {
+			char c;
+			while(1) { //read get
+				if(1 != read(iFd, &c, 1)) {
+					cout << "read get error" << endl;
+					close(iFd);
+					return -1;
+				}
+				printf("-%c\n", c);
+				if(c == ' ') {
+					break;
+				}
+				strQuery += c;
+			}
+			string strTmp = "";
+			while(1) { //read other
+				if(1 != read(iFd, &c, 1)) {
+					cout << "read other error" << endl;
+					close(iFd);
+					return -1;
+				}
+				if(c == 0x0d || c == 0x0a) {
+					strTmp += c;
+					if(strTmp.size() == 4) break;
+					continue;
+				}
+				strTmp = "";
+			}
+		} else { //已经全部读取出来了
+			int iLoop;
+			strQuery = "";
+			printf("=====%s\n", mlse);
+			iLoop = 4;
+			for(; iLoop < iFlag; iLoop++) {
+				if(mlse[iLoop] == ' ') {
+					break;
+				}
+				strQuery += mlse[iLoop];
+			}
+			if(iLoop >= iFlag) {
+				cout << "Read  html head error!!!" <<endl;
+				close(iFd);
+				return -1;
+			}
+			printf("----->>query:%s\n", strQuery.c_str());
+		}
+		int iLoop;
+		//GET http://x.x.x.x:31415/?no=1&x=xuan&p=11111
+		for(iLoop = 0; iLoop < strQuery.size(); iLoop++) { //查找?
+			if(strQuery[iLoop] == '?') {
+				break;
+			}
+		}
+		if(iLoop > strQuery.size() - 1) {
+			cout << "not found ? error" << endl;
+			close(iFd);
+			return -1;
+		}
+		iLoop++;
+		string strNew = ConvertString(strQuery.substr(iLoop).c_str());
+		char *szStr = new char[strNew.size() + 1];
+		for(iLoop = 0; iLoop < strNew.size(); iLoop++) {
+			szStr[iLoop] = strNew[iLoop];
+		}
+		szStr[iLoop] = 0;
+		QuerySearchTask queryTask;
+		queryTask.fd = iFd;
+		queryTask.bHtml = true;
+		queryTask.data = szStr;
+		queryTask.len = strNew.size();
+		querylq.push(queryTask);	
+		return 0;
+	};
+	string ConvertString(const char *str) {
+		size_t len = strlen(str);
+		string s;
+		if(len > 150)
+			return "";
+		size_t pos = 0;
+		while (pos < len) {
+			if (str[pos] == '%' && pos < len-2) {
+				char t[3];
+				t[0] = str[pos+1];
+				t[1] = str[pos+2];
+				t[2] = 0;
+				char c = htoi(t);
+				s.push_back(c);
+				pos+=2;
+			} else if (str[pos] == '+') {
+				s.push_back(' ');
+			} else {
+				s.push_back(str[pos]);
+			}
+			pos++;
+		}
+		return s;
+	};
+	int htoi(char *s) {
+		const char *digits = "0123456789ABCDEF";
+
+		if (islower(s[0])) s[0]=toupper(s[0]);
+		if (islower(s[1])) s[1]=toupper(s[1]);
+
+		return 16 * (strchr(digits, s[0])-strchr(digits,'0')) +(strchr(digits,s[1])-strchr(digits,'0'));
+	};
+
 };
 
 class SocketNonBlockingReadThread:public SocketReadThread
@@ -788,8 +907,15 @@ loop:
                 {
                     if (*(int *)p != 0xFFFFEEEE)
                     {
+						if(BUF_SIZE == remain) {
+							//cout << "Read  fault package,the header is fault!!!" <<endl;
+							int iRet = ReadFromHtml(querylq, task.fd, (char*)p, ret);
+							if(iRet == 0) {
+								//task.server->addSocket(task.fd);
+							}
+							goto overloop;
+						}
                         ret = 0;
-                        cout << "Read  fault package,the header is fault!!!" <<endl;
                         break;
                     }
                     size = *(int *)(p+4);
@@ -834,54 +960,38 @@ loop:
 #if 1 
             if (ret == -1)
             {
-                if (errno == EAGAIN)
-                {
-                    if (is_longdata || (pos != 0))
-                    {
+                if (errno == EAGAIN) {
+                    if (is_longdata || (pos != 0)) {
                         fde.add(task.fd);
 waitloop1:
                         int n = fde.wait(-1);
-                        if (n == -1)
-                        {
+                        if (n == -1) {
                             cout << "wait error!"<<endl;
                             goto waitloop1;
-                        }
-                        else if (n == 0)
-                        {
+                        } else if (n == 0) {
                             goto waitloop1;
                         }
                         fde.del(task.fd);
                         goto loop;
-                    }
-                    else
-                    {
+                    } else {
                         task.server->addSocket(task.fd);
                     }
-                }
-                else
-                {
-                    if (is_longdata)
-                    {
+                } else {
+                    if (is_longdata) {
                         delete[] longdata;
                     }
                     cout << "socket error" <<endl;
                     close(task.fd);
                 }
-            }
-            else if (ret == 0)
-            {
+            } else if (ret == 0) {
                 if (is_longdata)
                 {
                     delete[] longdata;
                 }
                 close(task.fd);
-            }
-            else if (pos == 0 && !is_longdata)
-            {
+            } else if (pos == 0 && !is_longdata) {
                 task.server->addSocket(task.fd);
-            }
-            else
-            {
+            } else {
                 fde.add(task.fd);
 waitloop2:
                 int n = fde.wait(-1);
@@ -898,6 +1008,7 @@ waitloop2:
                 goto loop;
             }
 #endif
+overloop:
             gettimeofday(&startt,0);
             long endtime = (startt.tv_sec*1000 + startt.tv_usec/1000);
             cout << "read time is" <<  endtime-starttime<<endl;
@@ -908,6 +1019,25 @@ waitloop2:
 
 class SocketWriteThread : public CRunnalble 
 {
+private:
+	void WriteHtml(SocketWriteTask & task) {
+		static string strHead = "jQueryBack&&jQueryBack(\n";
+		static string strTail = ")\n";
+		int iLength = strHead.size() + strTail.size() + task.len;
+		char szLength[10];
+		sprintf(szLength, "%d", iLength);
+		string s = "HTTP/1.1 200 OK\r\n";
+		s += "Server: R++ Web Server\r\n";
+		s += "Content-Length: ";
+		s += szLength;
+		s += "\r\n"; 
+		s += "Content-type: text/plain;charset=gbk\r\n\r\n";
+		safe_write(task.fd, s.c_str(), s.size());
+		safe_write(task.fd, strHead.c_str(), strHead.size());
+		safe_write(task.fd, task.data, task.len);
+		safe_write(task.fd, strTail.c_str(), strTail.size());
+		close(task.fd);
+	};
 public:
     virtual void run()
     {
@@ -918,6 +1048,10 @@ public:
         while (is_running)
         {
             SocketWriteTask task = lq.pop();
+			if(task.bHtml) {
+				WriteHtml(task);
+				continue;
+			}
 
             timeval startt,finisht;
             gettimeofday(&startt,0);
@@ -951,6 +1085,8 @@ public:
 
             // safe_write(task.fd, &task.len, 4);
             // safe_write(task.fd, task.data, task.len);
+			//这里增加close出错
+			//close(task.fd);
             delete[] task.data;
         }
     }

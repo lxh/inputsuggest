@@ -11,6 +11,7 @@ void UsageAndExit(const char * pzProc)
 	printf("taskname  ->can don't have(if don't have -t, then deal all the task of config.ini setting)\n");
 	printf("config.ini->configure file path\n");
 	printf("dump      ->0: excute all index; 1: only excute basic; 2: only excute tree; 3: only excute dump\n");
+	printf("\033[32;49;1mdump      ->4: very import, here delete item of file %s \033[39;49;0m\n", "chinese.dict.del");
 	exit(-1);
 }
 
@@ -39,9 +40,7 @@ void Run(const char * pzProc, map<const char, string> & mapPara)
 	int iDumpOnly = 0;
 	iIterMap = mapPara.find('d');
 	if(iIterMap != mapPara.end()) {
-		if(iIterMap->second == "1") {
-			iDumpOnly = 1;
-		}
+		iDumpOnly = atoi(iIterMap->second.c_str());
 	}
 
 	int iLoop;

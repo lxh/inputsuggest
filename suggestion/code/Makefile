@@ -11,7 +11,7 @@ SRC_IS_DICT=src/tool/CreateDictMain.cpp src/isdict/CreateDict.cpp src/util/XHStr
 #创建索引
 BIN_IS_INDEX=../bin/isindex
 UTIL_SRC=src/util/UnitMemoryManager.cpp src/util/BaseMemoryManager.cpp src/util/FileCommon.cpp src/util/XHStrUtils.cpp src/util/DumpPickIndex.cpp
-SRC_IS_INDEX=src/tool/IndexMain.cpp src/isindex/CreateIndex.cpp src/isindex/SysStructInfo.cpp src/isindex/IndexDataInfo.cpp src/isindex/IndexTreeInfo.cpp 
+SRC_IS_INDEX=src/tool/IndexMain.cpp src/isindex/CreateIndex.cpp src/isindex/SysStructInfo.cpp src/isindex/IndexDataInfo.cpp src/isindex/IndexTreeInfo.cpp src/isindex/IndexDeleteItem.cpp
 SRC_INDEX_OTHER=src/isindex/WordStringInfo.cpp src/isindex/LeafNode.cpp src/isindex/TreeNode.cpp src/isindex/TSTPat.cpp src/util/WriteLog.cpp src/util/CompressPinyin.cpp
 
 #检索服务
@@ -26,8 +26,8 @@ SRC_FILE=src/tool/CgiServer.cpp
 
 all:
 #	g++ -g $(SRC_FILE) -o $(CGI_OUT_FILE) -I./include  src/util/XHStrUtils.cpp -I/usr/include/ -liconv -L/usr/local/lib -DUSE_ICONV -L./iconv/
-	g++ -g $(SRC_IS_FORMAT) $(INC_IS) -o $(BIN_IS_FORMAT)
-	g++ -g $(SRC_IS_DICT) $(SPLITWORD_CPP) $(INC_IS) -o $(BIN_IS_DICT) 
+#	g++ -g $(SRC_IS_FORMAT) $(INC_IS) -o $(BIN_IS_FORMAT)
+#	g++ -g $(SRC_IS_DICT) $(SPLITWORD_CPP) $(INC_IS) -o $(BIN_IS_DICT) 
 	g++ -g $(SRC_IS_INDEX) $(SRC_INDEX_OTHER) $(INC_IS) -o $(BIN_IS_INDEX) $(UTIL_SRC)
 	g++ -g $(SRC_IS_SERVER) $(SRC_SERVER_OTHER) $(INC_IS) -o $(BIN_IS_SERVER) $(LB_SERVER) $(IMPORTANT_SRC)
 

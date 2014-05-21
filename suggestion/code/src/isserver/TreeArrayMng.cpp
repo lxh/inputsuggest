@@ -31,6 +31,8 @@ void CTreeArrayMng::Init()
 	m_stSysFlag.bWithManyTaskSearch = true;
 	m_stSysFlag.bWithChineseSpellCorrect = true;
 	m_stSysFlag.bWithSpellSimpleCorrect = true;
+
+    m_strPeerAddTaskName = G_STR(addtasksecondname);
 }
 
 //查找符合条件的匹配节点
@@ -107,13 +109,13 @@ bool CTreeArrayMng::CollectResult(const int iTreeType, VEC_MatchedNode& vecMatch
 				//查找是否有\0的节点，如果有则只添加这个节点
 				const XHRbNode* pNodeLeft = stTmp.pNode; //由于有汉字，可能存在负数，所有也要看右节点
 				const XHRbNode* pNodeLeftNew = NULL;
-				do {
+				do { //因为是要求完全相同长度的,因此这里要找到cByteDif为0的节点
 					if(pNodeLeft->cByteDif < 0) {
 						pNodeLeftNew = pTree->GetTreeRight(pNodeLeft);
 					} else if(pNodeLeft->cByteDif  == 0) {
 						break;
 					} else {
-						pNodeLeftNew = pTree->GetTreeRight(pNodeLeft);
+						pNodeLeftNew = pTree->GetTreeLeft(pNodeLeft);
 					}
 					if(!pNodeLeftNew) break;
 					pNodeLeft = pNodeLeftNew;
@@ -191,7 +193,7 @@ bool CTreeArrayMng::CollectNode(CTreeArray *pTreeArray, const int iTreeType, con
 				const char * pStr = pChinese->GetNodeString(pNode);
 				if(iKeyLen == 0 || strlen(pStr) == iKeyLen) {
 					XHChineseData * pCD = (XHChineseData *)pChinese->GetNodeDataFromId(pChinese->GetIdFromNode(pNode));
-					if(pFlagSet->IsGoodFlag(pCD->usAttr)) {
+					if(!(pCD->ucAttr & FLAG_CHINESE_UCATTR_DELETE) && pFlagSet->IsGoodFlag(pCD->usAttr)) {
 						topResult.collect(pChinese->GetIdFromNode(pNode), pCD->usWeight, strlen(pStr), (void*)pChinese);
 					}
 				}
@@ -209,27 +211,30 @@ bool CTreeArrayMng::CollectNode(CTreeArray *pTreeArray, const int iTreeType, con
 					}
 				}
 				const unsigned int cuiUpNum = pSpell->GetNodeExtraNums(pNode);
+				//printf("-----------------------------------------------------------------------------------------------collect %u\n", cuiUpNum);
 				if(cuiUpNum == 1) { //有1个上级的时候
 					unsigned int uiUpId = ((XHSpellData *)(pSpell->GetTreeWife(pNode)))->uiUpperPos;
 					XHChineseData * pCD = (XHChineseData *)pChinese->GetNodeDataFromId(uiUpId);
 					const char * pStr = (const char *)pChinese->GetNodeStringFromData(pCD);
+					//printf("%s---%d\n", pStr, uiUpId);
 					if(!pCD) {
 						printf("error: pcd is null[%s %d]\n", __FILE__, __LINE__);
 						break;
 					}
-					if(pFlagSet->IsGoodFlag(pCD->usAttr)) {
+					if(!(pCD->ucAttr & FLAG_CHINESE_UCATTR_DELETE) && pFlagSet->IsGoodFlag(pCD->usAttr)) {
 						topResult.collect(uiUpId, pCD->usWeight, strlen(pStr), (void*)pChinese);
 					}
 				} else {
 					const unsigned int * pExtraArray = (const unsigned int *)pSpell->GetNodeExtraInfo(pNode);
-					for(iLoop = 0; iLoop < cuiUpNum; iLoop++) {
+					for(iLoop = 0; iLoop < cuiUpNum && iLoop < NUMBER_MAX_RETURN_LIMIT; iLoop++) {
 						XHChineseData * pCD = (XHChineseData *)pChinese->GetNodeDataFromId(pExtraArray[iLoop]);
 						const char * pStr = (const char *)pChinese->GetNodeStringFromData(pCD);
+					//printf("%s---%d\n", pStr, pExtraArray[iLoop]);
 						if(!pCD) {
 							printf("error: pcd is null[%s %d]\n", __FILE__, __LINE__);
 							break;
 						}
-						if(pFlagSet->IsGoodFlag(pCD->usAttr)) {
+						if(!(pCD->ucAttr & FLAG_CHINESE_UCATTR_DELETE) && pFlagSet->IsGoodFlag(pCD->usAttr)) {
 							topResult.collect(pExtraArray[iLoop], pCD->usWeight, strlen(pStr), (void*)pChinese);
 						}
 					}
@@ -318,8 +323,9 @@ bool CTreeArrayMng::FindMatchNode_MixedCS(vector<CTreeArray*> &vecTreeArray, con
 		}
 		int iTotalLen = strPre.size() + strKeyNewFull.size() + iPreNullSize;
 		VEC_MatchedNode vecMatchedNodeTmp;
-		//printf("cs--->>match--------------->>>str:%s\n", strKeyNewFull.c_str());
+		//if(strKeyNewFull != "生鲜" ) continue;
 		FindMatchNode_Common(iIter->second, iTreeTypeNew, strPre, strKeyNewFull, iPreNullSize, vecMatchedNodeTmp, bSameLen);
+		//printf("cs--->>match--------------->>>str:%s; %d\n", strKeyNewFull.c_str(), vecMatchedNodeTmp.size());
 		if(vecMatchedNodeTmp.size() > 0) {
 			CollectResult(iTreeTypeNew, vecMatchedNodeTmp, iTotalLen, topResult, bSameLen, iKeyLen);
 		}
@@ -744,9 +750,17 @@ bool CTreeArrayMng::SearchResult(map<const string, string> & mapKeyValue, map<co
 	//初始化task选择模块
 	map<const string, CTMInfo*>::iterator iIterMap;
 	string strPre = xhPara.GetPre();
+	string strTaskSecondName = m_strPeerAddTaskName + strTaskName;
 	for(iIterMap = mapTreeInfo.begin(); iIterMap != mapTreeInfo.end(); iIterMap++) {
 		CTreeArray * pTreeArray = iIterMap->second->GetTreeArray();
 		if(iIterMap->first == strTaskName) {
+			iIterMap->second->m_ulHitTime++;
+			vecCurTask.push_back(pTreeArray);
+			if(strPre == "") { //前缀为空,不选择当前的task了
+				continue;
+			}
+		}
+		if(iIterMap->first == strTaskSecondName) {
 			iIterMap->second->m_ulHitTime++;
 			vecCurTask.push_back(pTreeArray);
 			if(strPre == "") { //前缀为空,不选择当前的task了
@@ -762,6 +776,7 @@ bool CTreeArrayMng::SearchResult(map<const string, string> & mapKeyValue, map<co
 	int iCategoryNum = xhPara.GetCategoryNum();
 	TopResult topResult(iRetLimit);
 	topResult.pFlagSet = &(xhPara.stFlagSet);
+	topResult.bSimpleView = xhPara.bSimpleView;
 	bool bSCRet = true;
 	for(iLoop = 0; iLoop < iCategoryNum; iLoop++) {
 		PRINT_T("before look category");

@@ -7,6 +7,7 @@
 #define G_INT(p) CSysConfigSet::GetInstance().GetInt(PARA_CONFIG_##p)
 #define G_STR(p) CSysConfigSet::GetInstance().GetString(PARA_CONFIG_##p)
 
+#define PARA_CONFIG_addtasksecondname       "addtasksecondname"  //新添数据保存在的task名的前缀
 #define PARA_CONFIG_configurepath           "configurepath"
 #define PARA_CONFIG_pathdata                "pathdata"
 #define PARA_CONFIG_tasklist                "tasklist"
@@ -151,10 +152,11 @@ private:
 		GetValue(PARA_CONFIG_indexport,      1, strT, indexport,      1, mapData);
 
 		//字符串
-		GetValue(PARA_CONFIG_tipserverlog,  0, tipserverlog,  iT, 1, mapData);
-		GetValue(PARA_CONFIG_tipindexlog,   0, tipindexlog,   iT, 1, mapData);
-		GetValue(PARA_CONFIG_splitwordpath, 0, splitwordpath, iT, 1, mapData);
-		GetValue(PARA_CONFIG_selecttree,    0, selecttree,    iT, 1, mapData);
+		GetValue(PARA_CONFIG_tipserverlog,      0, tipserverlog,      iT, 1, mapData);
+		GetValue(PARA_CONFIG_tipindexlog,       0, tipindexlog,       iT, 1, mapData);
+		GetValue(PARA_CONFIG_splitwordpath,     0, splitwordpath,     iT, 1, mapData);
+		GetValue(PARA_CONFIG_selecttree,        0, selecttree,        iT, 1, mapData);
+		GetValue(PARA_CONFIG_addtasksecondname, 0, addtasksecondname, iT, 1, mapData);
 		return 0;
 	};
 	void InitDefault() { //设置一些系统的默认值
@@ -175,6 +177,7 @@ private:
 		tipindexlog   = "indexout.log";
 		splitwordpath = "dictdir";
 		selecttree    = SELECT_TREE_ALL;  //#具体值见SysCommon.h
+		addtasksecondname = "xuan";
 	};
 	void InitConst() {
 		int iLoop;
@@ -223,6 +226,7 @@ private: //含有默认值的参数 --> 配置类
 	int withmixsearch;           //是否支持混合查询
 	int indexport;               //索引的端口号
 	
+	string addtasksecondname;    //存储一个任务的增量数据的任务的前缀
 	string tipserverlog;         //查询服务的日志位置
 	string tipindexlog;          //索引的日志位置
 	string splitwordpath;        //分词的位置，默认为在config下面

@@ -40,6 +40,7 @@ public:
             strcpy(writeTask.data,result.c_str());
             writeTask.data[result.size()] = '\0';
             delete[] task.data;
+			writeTask.bHtml = task.bHtml;
             writelq.push(writeTask);	
         }	
     }
@@ -187,7 +188,9 @@ int CServerPlat::WriteToClient(int iFd, const string & strResult, bool bCgi)
     int size = strResult.size();
 
     if(!bCgi) {
-        string strRet = "<?xml version='1.0' encoding='gbk' ?><responses code='200' msg='good'>" +  strResult + "</responses>";
+        string strRet = "Content-type: text/plain;charset=gbk\n\n";
+		strRet += "(" + strResult + ")";
+		//strRet += "<?xml version='1.0' encoding='gbk' ?><responses code='200' msg='good'>" +  strResult + "</responses>";
         safe_write(iFd, strRet.c_str(), strRet.size());
     } else if(size < 1000000-8) {
         for(int i=0; i<4; i++)

@@ -409,6 +409,7 @@ void CIndexDataInfo::CreateOneIndex_Chinese3(const int iSelectId, const int & iN
 	bool bJoin = false;
 	map<const string, unsigned int> mapWordLineId;
 	map<const string, unsigned int>::iterator iIterMI;
+	int iAppendLines = 0;
 	if(iSelectId != iNewSelectId) { //当前是扩展处理
 		pIdToId = new IdToId[iNodeNum];
 		if(pIdToId == NULL) {
@@ -419,6 +420,7 @@ void CIndexDataInfo::CreateOneIndex_Chinese3(const int iSelectId, const int & iN
 		bJoin = true;
 		string strCenterChinese = strPath + m_pSysConfigSet->GetFileName(iNewSelectId);
 		CFileCommon::WordToLineNumber(strCenterChinese, ",", 1, mapWordLineId);
+		iAppendLines = CFileCommon::GetFileLines(strCenterChinese);
 	}
 
 	CReadBigFile fdR;
@@ -448,7 +450,7 @@ void CIndexDataInfo::CreateOneIndex_Chinese3(const int iSelectId, const int & iN
 				pIdToId[iFileLinesAppend].uiTo = iIterMI->second;
 				continue;
 			} else {
-				pIdToId[iFileLinesAppend].uiTo = iFileLinesAppend;
+				pIdToId[iFileLinesAppend].uiTo = iFileLines + 1 + iAppendLines;
 			}
 		}
 		iFileLines++;

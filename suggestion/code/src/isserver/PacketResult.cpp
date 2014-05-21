@@ -11,20 +11,27 @@ string CPacketResult::Packet(TopResult & topResult)
     ResultElement * pRE;
     char szStr[10240];
 	int iNumber = topResult.getSavedSize();
+	bool bSimpleView = topResult.bSimpleView;
+	int iLoop = iNumber;
     while(pRE = (ResultElement*)topResult.tipqueue.pop()) {
         CTreeChinese *pChinese = (CTreeChinese *)pRE->pPara;
         const XHChineseData * pCD = (XHChineseData *)pChinese->GetNodeDataFromId(pRE->eleId);
         const char * pStr = (const char *)pChinese->GetNodeStringFromData(pCD);
-        const char * pOrigStr = (const char *)pChinese->GetNodeOrigStringFromData(pCD);
-        const char * pExtra = (const char *)pChinese->GetNodeExtraStringFromData(pCD);
-		if(pOrigStr == NULL) {
-			pOrigStr = "";
+		if(!bSimpleView) {
+			const char * pOrigStr = (const char *)pChinese->GetNodeOrigStringFromData(pCD);
+			const char * pExtra = (const char *)pChinese->GetNodeExtraStringFromData(pCD);
+			if(pOrigStr == NULL) {
+				pOrigStr = "";
+			}
+			if(pExtra) {
+				snprintf(szStr, sizeof(szStr), "{\"str\":\"%s\",\"orig\":\"%s\",\"weight\":\"%d\",\"flag\":\"%d(%d)\",\"querynum\":\"%d\",\"extra\":\"%s\"},\n", pStr, pOrigStr, pCD->usWeight, pCD->usAttr, pRE->eleId, pRE->queryNum, pExtra);
+			} else {
+				snprintf(szStr, sizeof(szStr), "{\"str\":\"%s\",\"orig\":\"%s\",\"weight\":\"%d\",\"flag\":\"%d\",\"querynum\":\"%d\"},\n", pStr, pOrigStr, pCD->usWeight, pCD->usAttr, pRE->queryNum);
+			}
+		} else {
+			snprintf(szStr, sizeof(szStr), "\"str_%d\":\"%s\",\n", iLoop, pStr);
+			iLoop--;
 		}
-        if(pExtra) {
-			snprintf(szStr, sizeof(szStr), "{\"str\":\"%s\",\"orig\":\"%s\",\"weight\":\"%d\",\"flag\":\"%d(%d)\",\"querynum\":\"%d\",\"extra\":\"%s\"},\n", pStr, pOrigStr, pCD->usWeight, pCD->usAttr, pRE->eleId, pRE->queryNum, pExtra);
-        } else {
-			snprintf(szStr, sizeof(szStr), "{\"str\":\"%s\",\"orig\":\"%s\",\"weight\":\"%d\",\"flag\":\"%d\",\"querynum\":\"%d\"},\n", pStr, pOrigStr, pCD->usWeight, pCD->usAttr, pRE->queryNum);
-        }
 		strResult = szStr + strResult;
         delete pRE;
     }
@@ -34,6 +41,10 @@ string CPacketResult::Packet(TopResult & topResult)
 	char szNumber[50];
 	snprintf(szNumber, sizeof(szNumber), "\"number\":\"%d\",", iNumber);
 	string strNumber = szNumber;
-	strResult = strNumber + "\"detailall\":[\n" + strResult +  "\n]\n";
+	if(!bSimpleView) {
+		strResult = strNumber + "\"detailall\":[\n" + strResult +  "\n]\n";
+	} else {
+		strResult = strNumber + "\"detailall\":{\n" + strResult +  "\n}\n";
+	}
     return strResult;
 }

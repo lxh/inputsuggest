@@ -19,6 +19,7 @@ private:
 	int Process();
 	int Process_BasicInfo();
 	void Process_TreeInfo();
+	int Process_DeleteItem();
 private:
 	CSysConfigSet * m_pSysConfigSet; //配置文件的信息                 
 	string          m_strTaskName;   //任务的名称                     

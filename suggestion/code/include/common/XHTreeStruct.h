@@ -127,16 +127,19 @@ public: //接口
 //ucAttr的意义
 #define FLAG_CHINESE_UCATTR_WITHEXTRAINFO  1  //含有扩展信息
 #define FLAG_CHINESE_UCATTR_WITHORIGWORD   2  //含有原词信息
+#define FLAG_CHINESE_UCATTR_DELETE         4  //该条数据已经删除
 //_XHChineseData 与 _XHSpellData的大小需要一致(为了更方便)
 typedef struct _XHChineseData {
     unsigned short usWeight:10;  //汉字的权重
 
     //ucAttr: 1 1 1 1 1 1 //目前还有4位扩展
-    //                | |
-    //                |\|/
-    //                | 是否含有扩展信息 0x01
-	//               \|/
-	//               是否原词跟格式化后的词语不一样 0x02
+    //              | | |
+    //              | |\|/
+    //              | | 是否含有扩展信息 0x01
+	//              |\|/
+	//              |是否原词跟格式化后的词语不一样 0x02
+	//             \|/
+	//             是否已经打了删除标记
     unsigned short ucAttr:6;      //字节属性   -->自身具备(是否具有dot属性)
     unsigned short usAttr;        //双字节属性 -->外部设置
 	//数据部分的位置->汉字的字符串部分是区分与spelldata的字符串部分的，因为汉字的字符串部分还受FLAG_CHINESE_UCATTR_WITHEXTRAINFO的影响

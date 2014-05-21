@@ -37,6 +37,7 @@ private:
 private: //变量
 	bool  m_bNoDotSearch; //是否支持dot查询,如果不支持,则spell树中不区分大小写,暂时认为都支持
 	SysFlagForCategory m_stSysFlag;
+	string m_strPeerAddTaskName;
 };
 
 #endif

@@ -6,6 +6,7 @@
 #include "util/WriteLog.h"
 #include "util/CompressPinyin.h"
 #include "util/DumpPickIndex.h"
+#include "isindex/IndexDeleteItem.h"
 
 int CCreateIndex::Run(const string & strTaskName, CSysConfigSet *pclsSysConfigSet, int iType)
 {
@@ -42,6 +43,12 @@ void CCreateIndex::Process_TreeInfo()
 	cITI.Run(m_strTaskName, m_pSysConfigSet);
 }
 
+int CCreateIndex::Process_DeleteItem()
+{
+	CIndexDeleteItem cIDI;
+	return cIDI.Run(m_strTaskName, m_pSysConfigSet);
+}
+
 //处理流程
 int CCreateIndex::Process()
 {
@@ -54,6 +61,11 @@ int CCreateIndex::Process()
 			break;
 		case 3: //treeinfo
 			CDumpPickIndex::Dump(m_strTaskName, m_pSysConfigSet); 
+			break;
+		case 4: //delete some item
+			if(Process_DeleteItem()) {
+				CDumpPickIndex::Dump(m_strTaskName, m_pSysConfigSet); 
+			}
 			break;
 		default: //case 0:
 			Process_BasicInfo();

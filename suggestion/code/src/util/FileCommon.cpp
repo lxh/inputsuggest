@@ -54,6 +54,19 @@ void CFileCommon::WriteOneFile(const string & strFileName, const char * pData, c
 	
 	close(iFd);
 }
+bool CFileCommon::ReadOneFile(const string & strFileName, char *& pData, unsigned int & uiSize)
+{
+	int iFd = open(strFileName.c_str(), O_RDONLY);
+	if(iFd == -1) return false;
+
+	read(iFd, &uiSize, 4);
+	pData = new char[uiSize];
+	unsigned int uiTotal = uiSize + 4;
+	read(iFd, pData + 4, uiSize - 4);
+	
+	close(iFd);
+	return true;
+}
 //前四个字节为文件内容的大小（大小值包含前四个字节）
 void CFileCommon::WriteOneFileAppend(const string & strFileName, const char * pData, const unsigned int uiSize)
 {

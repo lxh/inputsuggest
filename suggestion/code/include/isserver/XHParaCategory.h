@@ -166,6 +166,7 @@ public:
 	bool GetMixKey(const string & strIn, string & strMixKey);
 	FlagSet    stFlagSet;
 	int  iMustAllTask;   //强制使用全部的任务查询，优先级非常高，强制
+	bool bSimpleView;   //最后的显示是否是简单显示
 private:
 	bool     m_bWithMixSerach; //从配置文件中读取，是否索引中建立了混合查询部分的内容
 	char     m_cSearchKeyType;
